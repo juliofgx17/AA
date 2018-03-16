@@ -23,13 +23,18 @@ pseudoinversa = function(fdatos){
 }
 
 #Función de regresión lineal usando la pseudoinversa
-RegresionLinealPseudoinversa <- function(fdatos, fdigitos){
-  pesos <- pseudoinversa(fdatos) %*% fdigitos
+RegresionLinealPseudoinversa <- function(fdatos, fetiquetas){
+  pesos <- pseudoinversa(fdatos) %*% fetiquetas
 }
 
 #Función de regresión lineal usando SGD
-RegresionLinealSGD <- function(fdatos, fdigitos){
+RegresionLinealSGD <- function(fdatos, fetiquetas){
  w0
+}
+
+#Función que devuelve el error
+error <- function(etiquetas,predicciones){
+  length(etiquetas[etiquetas != as.vector(predicciones)])/length(etiquetas)
 }
 
 
@@ -39,17 +44,17 @@ RegresionLinealSGD <- function(fdatos, fdigitos){
 
 ## ------------------------------------------------------------------------
 
-# 1------------------- LEER DIGITOS
+# 1------------------- LEER ETIQUETAS
 
 digit.train <- read.table("zip.train", quote="\"", comment.char="", stringsAsFactors=FALSE) # 1. lectura zip del train
 digitos15.train = digit.train[digit.train$V1==1 | digit.train$V1==5,] # Se obtienen los números 1 y 5
-digitos = digitos15.train[,1]    # vector de etiquetas del train
-ndigitos = nrow(digitos15.train)  # numero de muestras del train
+etiquetasTrain = digitos15.train[,1]    # vector de etiquetas del train
+netiquetasTrain = nrow(digitos15.train)  # numero de muestras del train
 
 digit.test <- read.table("zip.test", quote="\"", comment.char="", stringsAsFactors=TRUE) # 1. lectura zip del test
 digitos15.test = digit.test[digit.test$V1==1 | digit.test$V1==5,] # Se obtienen los números 1 y 5
-digitosTest = digitos15.test[,1]    # vector de etiquetas del test
-ndigitosTest = nrow(digitos15.test)  # numero de muestras del test
+etiquetasTest = digitos15.test[,1]    # vector de etiquetas del test
+netiquetasTest = nrow(digitos15.test)  # numero de muestras del test
 
 
 
@@ -58,19 +63,19 @@ ndigitosTest = nrow(digitos15.test)  # numero de muestras del test
 # se retira la clase y se monta una matriz 3D: 599*16*16
 
 # 2------------------- OBTENER GRISES
-grises = array(unlist(subset(digitos15.train,select=-V1)),c(ndigitos,16,16))
+grises = array(unlist(subset(digitos15.train,select=-V1)),c(netiquetasTrain,16,16))
 
-grisesTest = array(unlist(subset(digitos15.test,select=-V1)),c(ndigitosTest,16,16))
+grisesTest = array(unlist(subset(digitos15.test,select=-V1)),c(netiquetasTest,16,16))
 
 # -------------------- OBTENER INTENSIDAD
-intensidad = apply( grises, MARGIN = 1, FUN = mean )
+intensidadTrain = apply( grises, MARGIN = 1, FUN = mean )
 
 intensidadTest = apply( grisesTest, MARGIN = 1, FUN = mean )
 
 
 
 # 3------------------- OBTENER SIMETRIA
-simetria = apply( grises, MARGIN = 1, FUN = fsimetria )
+simetriaTrain = apply( grises, MARGIN = 1, FUN = fsimetria )
 
 simetriaTest = apply( grisesTest, MARGIN = 1, FUN = fsimetria )
 
@@ -83,41 +88,44 @@ rm(digit.test) # Se borran cosas para liberar espacio
 rm(digitos15.test)
 
 
-# 4------------------- REETIQUETAR DIGITOS
-digitos[digitos==5]=-1
+# 4------------------- REETIQUETAR ETIQUETAS
+etiquetasTrain[etiquetasTrain==5]=-1
 
-digitosTest[digitosTest==5]=-1
+etiquetasTest[etiquetasTest==5]=-1
   
 # 5------------------- CREAR DATOSTR
-datosTr = as.matrix(cbind(intensidad,simetria,1))
+datosTr = as.matrix(cbind(intensidadTrain,simetriaTrain,1))
 datosTest = as.matrix(cbind(intensidadTest,simetriaTest,1))
 
 
 # -------------------- SACAR PESOS
-w = RegresionLinealPseudoinversa(datosTr, digitos)
+w = RegresionLinealPseudoinversa(datosTr, etiquetasTrain)
 
-#w = RegresionLinealSGD(datosTr,digitos)
+#w = RegresionLinealSGD(datosTr,etiquetasTrain)
 
 # -------------------- OBTENER RESULTADOS DE h(x) CON TRAIN
-hx = datosTr %*% w
-hxout = datosTest %*% w
+hx = sign(datosTr %*% w)
+hxout = sign(datosTest %*% w)
 
 
 # -------------------- DIBUJAR FUNCION
 ayb = pasoARecta(w)
 
-x = c(-0.9,0.1)
-y = c(-0.9*ayb[1] + ayb[2], 0.1*ayb[1] + ayb[2] )
+x = c(-1,0.5)
+y = c(-1*ayb[1] + ayb[2], 0.5*ayb[1] + ayb[2] )
 
-plot(x=intensidad,y=simetria,col=digitos+2)
-lines(x,y,col='red')
+
+plot(x=intensidadTrain,y=simetriaTrain,col=etiquetasTrain+3,xlim=c(-1,0.5),ylim=c(-600,0))
+par(new=TRUE)
+plot(x=intensidadTest,y=simetriaTest,col=etiquetasTest+7,xlim=c(-1,0.5),ylim=c(-600,0))
+lines(x,y,col='green')
 
 
 # -------------------- OBTENEMOS Ein y Eout
 
-Ein = ( t(w) %*% t(datosTr) %*% datosTr %*% w - 2*t(digitos)%*%datosTr%*%w + t(digitos)%*%digitos )/599
+Ein = error(etiquetasTrain,hx)
 
-Eout = ( t(w) %*% t(datosTest) %*% datosTest %*% w - 2*t(digitosTest)%*%datosTest%*%w + t(digitosTest)%*%digitosTest )/49
+Eout = error(etiquetasTest,hxout)
 
 
 
@@ -125,7 +133,7 @@ Eout = ( t(w) %*% t(datosTest) %*% datosTest %*% w - 2*t(digitosTest)%*%datosTes
 #       Muestras de 1: 442 Muestras de 5: 157
 # 2. obtencion de la intensidad del train
 # 3. obtencion de la simetria del train. --- liberar espacio rm(grises)
-# 4. recodificar digitos del train (las etiquetas), las que figuran como 5 son -1
+# 4. recodificar etiquetas del train (las etiquetas), las que figuran como 5 son -1
 # 5. componer datosTr = as.matrix(cbind(intensidad,simetria)) del train
 # repetir pasos 1..5 con el test
 # ...
@@ -134,8 +142,23 @@ Eout = ( t(w) %*% t(datosTest) %*% datosTest %*% w - 2*t(digitosTest)%*%datosTes
 # tareas a realizar para llevar a cabo la regresion:
 
 # 11. IMPLEMENTAR Regression_Lin para la obtencion de los pesos del modelo lineal
-# w = Regression_Lin(datosTr,digitos)  # obtener w de pesos. Cuidado!!!  w3 es el termino independiente
+# w = Regression_Lin(datosTr,etiquetas)  # obtener w de pesos. Cuidado!!!  w3 es el termino independiente
 # repetir 12 y 13 para training y para test, Ein y Eout
 # 12. clasificar los datos con los pesos, esto es, obtención del vector de etiquetas predichas
 # 13. calcular los errores
 # 
+
+
+
+
+
+
+
+
+
+#El gradiente desdendente es una funcion donde se le pasa la f y la f' (derivada) para que sea reutilizable
+#Sirve para actualizar el peso 
+#GD(f,f',valor_inicial,num_iteraciones,mu (cte, n esa rara), umbral_de_parada(10^-14 por ejemplo),umbral_diferencia_entre_dos_puntos(si la diferencia es muy pequeña es que la funcion apenas baja y se puede tirar años))
+
+
+#SGD es el GD pero usando puntos aleatorios
