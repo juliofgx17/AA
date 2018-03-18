@@ -1,5 +1,54 @@
+setwd("~/Desktop/Uni/AA/Practicas/P1")
+set.seed(3)
 
 ## ------------------------------------------------------------------------
+
+
+
+Ein_dwj = function(w,x,y,num_iteraciones){
+  
+  suma = 0
+
+  for( i in 1:num_iteraciones ){
+    xrand = sample(length(x)/3,1)
+
+
+    if( sign(sum(t(w)%*%(x[xrand,]))) < y[xrand] ) suma = suma + x[xrand]*(-1)
+    if( sign(sum(t(w)%*%(x[xrand,]))) > y[xrand] ) suma = suma + x[xrand]
+  }
+  value = 2/num_iteraciones * suma
+  
+  value
+}
+
+#Función del SGD para clasificador
+SGD <- function(w,x,y,porcentaje_aleatorios=0.1,nu=0.01){
+  
+  i = 0
+  w_inicial = w
+  w_anterior = w_inicial   # Para calcular la diferencia de valores (si es muy pequeña el SGD para)
+  
+  num_iteraciones = length(y)*porcentaje_aleatorios
+  w
+  x[3]
+  while( i < num_iteraciones ){
+    w
+    w_anterior[1] = w_inicial[1]
+    w_anterior[2] = w_inicial[2]
+    w_anterior[3] = w_inicial[3]
+    
+    w_inicial[1] = w_inicial[1] - nu*Ein_dwj(w,x,y,num_iteraciones)
+    w_inicial[2] = w_inicial[2] - nu*Ein_dwj(w,x,y,num_iteraciones)
+    w_inicial[2] = w_inicial[2] - nu*Ein_dwj(w,x,y,num_iteraciones)
+    
+    i = i+1
+  }
+
+  w_inicial
+
+
+}
+
 
 #Función de simetría. Devuelve un número que nos dirá la simetría
 
@@ -27,10 +76,6 @@ RegresionLinealPseudoinversa <- function(fdatos, fetiquetas){
   pesos <- pseudoinversa(fdatos) %*% fetiquetas
 }
 
-#Función de regresión lineal usando SGD
-RegresionLinealSGD <- function(fdatos, fetiquetas){
- w0
-}
 
 #Función que devuelve el error
 error <- function(etiquetas,predicciones){
@@ -63,20 +108,17 @@ netiquetasTest = nrow(digitos15.test)  # numero de muestras del test
 # se retira la clase y se monta una matriz 3D: 599*16*16
 
 # 2------------------- OBTENER GRISES
-grises = array(unlist(subset(digitos15.train,select=-V1)),c(netiquetasTrain,16,16))
-
+grisesTrain = array(unlist(subset(digitos15.train,select=-V1)),c(netiquetasTrain,16,16))
 grisesTest = array(unlist(subset(digitos15.test,select=-V1)),c(netiquetasTest,16,16))
 
 # -------------------- OBTENER INTENSIDAD
-intensidadTrain = apply( grises, MARGIN = 1, FUN = mean )
-
+intensidadTrain = apply( grisesTrain, MARGIN = 1, FUN = mean )
 intensidadTest = apply( grisesTest, MARGIN = 1, FUN = mean )
 
 
 
 # 3------------------- OBTENER SIMETRIA
-simetriaTrain = apply( grises, MARGIN = 1, FUN = fsimetria )
-
+simetriaTrain = apply( grisesTrain, MARGIN = 1, FUN = fsimetria )
 simetriaTest = apply( grisesTest, MARGIN = 1, FUN = fsimetria )
 
 
@@ -90,7 +132,6 @@ rm(digitos15.test)
 
 # 4------------------- REETIQUETAR ETIQUETAS
 etiquetasTrain[etiquetasTrain==5]=-1
-
 etiquetasTest[etiquetasTest==5]=-1
   
 # 5------------------- CREAR DATOSTR
@@ -99,9 +140,10 @@ datosTest = as.matrix(cbind(intensidadTest,simetriaTest,1))
 
 
 # -------------------- SACAR PESOS
-w = RegresionLinealPseudoinversa(datosTr, etiquetasTrain)
+#w = RegresionLinealPseudoinversa(datosTr, etiquetasTrain)
+w = c(0,0,0)
 
-#w = RegresionLinealSGD(datosTr,etiquetasTrain)
+w = SGD(w,datosTr,etiquetasTrain,1)
 
 # -------------------- OBTENER RESULTADOS DE h(x) CON TRAIN
 hx = sign(datosTr %*% w)
@@ -122,10 +164,19 @@ lines(x,y,col='green')
 
 
 # -------------------- OBTENEMOS Ein y Eout
-
 Ein = error(etiquetasTrain,hx)
-
 Eout = error(etiquetasTest,hxout)
+
+
+
+
+
+
+
+
+
+
+
 
 
 
