@@ -68,16 +68,17 @@ J <- function(theta)
 
 dJ <- function(theta,j)
 {
+  
   cost = 0
-  for( i in 1:length(y) )
+  for( i in 1:3823 )
   {
-    cost = cost + (hx(x[i,],theta)-y[i])*x[i,j]
+    cost = cost + (    1 / (1+exp(-t(theta)%*%x[i,]))    -y[i])*x[i,j]
   }
   
-  cost = cost/length(y)
+  cost = cost/3823
   
-  if( j != 1 ) cost = cost - (lambda*theta[j])/length(y)
-  
+  if( j != 1 ) cost = cost - (lambda*theta[j])/3823
+
   cost
 }
 
@@ -91,9 +92,10 @@ GD <- function()
   for( i in 1:1000 )
   {
     print(i)
-    for( j in 1:length(theta) )
+    for( j in 1:65 )
     {
       temp[j] = temp[j] - lr*dJ(theta,j)
+
     }
     
     theta = temp
