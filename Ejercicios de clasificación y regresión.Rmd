@@ -1,5 +1,5 @@
 ---
-title: "Ejercicios de clasificación y regresión"
+title: "Ejercicios de clasificacion y regresióo"
 author: "Julio A. Fresneda"
 date: "May 18, 2018"
 output: pdf_document
@@ -47,7 +47,7 @@ En código, la función es la siguiente
 ```{r}
 hx <- function(x,theta)
 {
-  1 / (1+exp(-t(theta)%*%x))
+  1 / (1+exp(- t(theta)%*%x) )
 }
 ```
 
@@ -375,6 +375,11 @@ Eval = fallos/length(ytest[,1])
 
 ```
 
+Veamos el Eval obtenido:
+```{r}
+Eval
+```
+
 
 Como vemos, el error medio obtenido parece bastante bueno.
 
@@ -400,7 +405,7 @@ for( i in 1:10 )
   theta = rep(0,ncol(X)) 
   
   # Aplicamos el Gradiente descendiente. Le pasamos como parámetro toda la base de datos
-  theta = GD(X,Y[,i],theta,lambda) 
+  theta = GD(X,Y,theta,lambda) 
   
   # Añadimos los valores a la matriz de hipótesis
   thetaMatrix[i,] = theta
@@ -418,7 +423,7 @@ digitosTest <- read.csv("datos/optdigits_tes.csv", header=F, sep=",") # 1. lectu
 
 Xtest <- as.matrix(digitosTest[-65])
 Xtest = Xtest/16
-Xtest <- cbind(rep(1,nrow(X)),X)
+Xtest <- cbind(rep(1,nrow(Xtest)))
 
 Ytest <- as.matrix(digitosTest[,65])
 Yorigins = Ytest
@@ -443,8 +448,11 @@ for( i in 1:10 )
   }
   
 }
+```
 
+Ya hemos clasificado. Vamos a ver el error de salida
 
+```{r}
 # Obtenemos los fallos
 fallos = 0
 for( i in 1:length(Ypredicted) )
@@ -452,6 +460,11 @@ for( i in 1:length(Ypredicted) )
   if( Ypredicted[i] != Y[i] ) fallos = fallos + 1
 }
 Eout = fallos / length(Ytest)
+```
+
+Veamos el Eout obtenido:
+```{r}
+Eout
 ```
 
 
@@ -670,11 +683,9 @@ for( k in 1:5 ) # 5 Veces Cross-Validation
   if( k == 4 ) lambda = 0.1
   if( k == 5 ) lambda = 1
   
-  
   error = 0
   for( l in 1:5 ) # Con cada lambda, 5 entrenamientos distintos
   {
-    
     if( l == 1 ) # En el primer entrenamiento, el primer subset será de test
     {
       xtest = x1
@@ -759,7 +770,7 @@ lambda = 0
 
 theta = rep(0,ncol(xtrain)) # Inicializamos valores a 0
 
-theta = GD(xtrain,ytrain,theta,lambda,num_iteraciones = 3000 ) # Al ser única ejecución podemos subirle el número de iteraciones
+theta = GD(xtrain,ytrain,theta,lambda,num_iteraciones = 5000 ) # Al ser única ejecución podemos subirle el número de iteraciones
 ```
 
 
@@ -768,9 +779,10 @@ Ya tenemos los valores de la hipótesis. Vamos a ponerla a prueba en el test.
 
 ```{r}
 error = J(xtest,ytest,theta,lambda)
+error
 ```
 
-Como vemos, el error está acorde a lo esperado.
+Como vemos, el error está acorde a lo esperado. De hecho, incluso ha bajado un poco, seguramente por que hemos entrenado con más iteraciones.
 
 ## Conclusión
 
